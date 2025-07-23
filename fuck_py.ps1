@@ -1,27 +1,23 @@
-# 🧨 Python Exorcism Protocol
-Write-Host "Initiating full Python wipeout..." -ForegroundColor Red
+# 🔥 Ultimate Python Exorcism Script for Windows
+Write-Host "🧨 Launching full Python annihilation protocol..." -ForegroundColor Red
 
-# Step 1: Try to uninstall all Python versions via WMI
-Write-Host "`nSearching for installed Python products..." -ForegroundColor Cyan
-$pythonProducts = Get-WmiObject -Query "SELECT * FROM Win32_Product WHERE Name LIKE 'Python%'"
-if ($pythonProducts.Count -gt 0) {
-    foreach ($product in $pythonProducts) {
-        Write-Host "Uninstalling $($product.Name)..."
-        try {
-            $product.Uninstall() | Out-Null
-            Write-Host "✔️ Successfully uninstalled $($product.Name)"
-        } catch {
-            Write-Host "❌ Failed to uninstall $($product.Name) - possibly corrupted" -ForegroundColor Yellow
-        }
+# --- STEP 1: Try to uninstall all Python versions via WMI ---
+Write-Host "`n📦 Attempting to uninstall Python via WMI..." -ForegroundColor Cyan
+$products = Get-WmiObject -Query "SELECT * FROM Win32_Product WHERE Name LIKE 'Python%'"
+foreach ($product in $products) {
+    Write-Host "Uninstalling $($product.Name)..."
+    try {
+        $product.Uninstall() | Out-Null
+        Write-Host "✔️ Uninstalled: $($product.Name)"
+    } catch {
+        Write-Host "❌ Failed to uninstall $($product.Name), continuing..." -ForegroundColor Yellow
     }
-} else {
-    Write-Host "No registered Python products found."
 }
 
 Start-Sleep -Seconds 2
 
-# Step 2: Delete known Python folders
-Write-Host "`n🧹 Deleting Python-related directories..." -ForegroundColor Cyan
+# --- STEP 2: Delete all known Python folders ---
+Write-Host "`n🧹 Deleting known Python directories..." -ForegroundColor Cyan
 
 $pathsToDelete = @(
     "$env:ProgramFiles\Python*",
@@ -42,53 +38,58 @@ foreach ($path in $pathsToDelete) {
             Remove-Item -Recurse -Force -Path $path -ErrorAction Stop
             Write-Host "✔️ Deleted: $path"
         } catch {
-            Write-Host "❌ Failed to delete: $path" -ForegroundColor Yellow
+            Write-Host "❌ Could not delete: $path" -ForegroundColor Yellow
         }
     }
 }
 
-# Step 3: Remove Python from user PATH
-Write-Host "`nScrubbing PATH variables..." -ForegroundColor Cyan
+# --- STEP 3: Clean PATH variables ---
+Write-Host "`n🧼 Scrubbing PATH environment variables..." -ForegroundColor Cyan
 
 function Clean-Path ($scope) {
-    $path = [Environment]::GetEnvironmentVariable("Path", $scope)
-    if ($null -ne $path) {
-        $splitPath = $path -split ";"
-        $filteredPath = $splitPath | Where-Object { $_ -notmatch "Python" -and $_ -notmatch "pip" -and $_ -ne "" }
-        [Environment]::SetEnvironmentVariable("Path", ($filteredPath -join ";"), $scope)
+    $original = [Environment]::GetEnvironmentVariable("Path", $scope)
+    if ($null -ne $original) {
+        $split = $original -split ";"
+        $filtered = $split | Where-Object { $_ -notmatch "Python" -and $_ -notmatch "pip" -and $_ -ne "" }
+        [Environment]::SetEnvironmentVariable("Path", ($filtered -join ";"), $scope)
         Write-Host "✔️ Cleaned PATH for $scope"
     }
 }
-
 Clean-Path -scope "User"
 Clean-Path -scope "Machine"
 
-# Step 4: Remove leftover registry keys
-Write-Host "`nClening registry entries..." -ForegroundColor Cyan
+# --- STEP 4: Nuke all related registry entries including uninstall data ---
+Write-Host "`n🧯 Purging Python-related registry keys..." -ForegroundColor Cyan
 
-$registryPaths = @(
-    "HKCU:\Software\Python",
+$registryRoots = @(
+    "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall",
+    "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall",
+    "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall",
     "HKLM:\Software\Python",
     "HKLM:\Software\WOW6432Node\Python",
-    "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall",
-    "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall",
-    "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
+    "HKCU:\Software\Python"
 )
 
-foreach ($reg in $registryPaths) {
-    Get-ChildItem $reg -ErrorAction SilentlyContinue | ForEach-Object {
-        if ($_.Name -match "Python") {
-            try {
-                Remove-Item -Recurse -Force -Path $_.PsPath -ErrorAction Stop
-                Write-Host "✔️ Removed registry key: $($_.Name)"
-            } catch {
-                Write-Host "❌ Failed to remove registry key: $($_.Name)" -ForegroundColor Yellow
+foreach ($root in $registryRoots) {
+    try {
+        Get-ChildItem -Path $root -ErrorAction SilentlyContinue | ForEach-Object {
+            $keyName = $_.Name
+            if ($keyName -match "Python") {
+                try {
+                    Remove-Item -Path $_.PsPath -Recurse -Force -ErrorAction Stop
+                    Write-Host "✔️ Removed registry key: $keyName"
+                } catch {
+                    Write-Host "❌ Could not remove registry key: $keyName" -ForegroundColor Yellow
+                }
             }
         }
+    } catch {
+        Write-Host "⚠️ Could not access registry path: $root" -ForegroundColor Yellow
     }
 }
 
-# Final check
-Write-Host "`n💀 Wipe complete." -ForegroundColor Green
-Write-Host "If you're still seeing Python anywhere, it's haunted." -ForegroundColor DarkGray
-Write-Host "`n💡 Reboot your system before reinstalling Python." -ForegroundColor Yellow
+# --- STEP 5: Final checks ---
+Write-Host "`n✅ Purge complete." -ForegroundColor Green
+Write-Host "💀 If you still see Python anywhere, it's a ghost process." -ForegroundColor DarkGray
+Write-Host "🔄 Reboot your system before reinstalling Python." -ForegroundColor Yellow
+Write-Host "📥 Download clean installer from: https://www.python.org/downloads/"
